@@ -1,0 +1,93 @@
+/* Tema personalizado para o Video.js */
+.vjs-theme-streamwaves {
+  --vjs-theme-streamwaves--primary: #6366f1;
+  --vjs-theme-streamwaves--secondary: #f1f5f9;
+}
+
+.vjs-theme-streamwaves .vjs-control-bar {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 60%, transparent 100%);
+  height: 4em;
+  padding-top: 1em;
+}
+
+.vjs-theme-streamwaves .vjs-button > .vjs-icon-placeholder:before {
+  line-height: 2.2;
+}
+
+.vjs-theme-streamwaves .vjs-play-progress:before {
+  display: none;
+}
+
+.vjs-theme-streamwaves .vjs-progress-control .vjs-play-progress {
+  background-color: var(--vjs-theme-streamwaves--primary);
+}
+
+.vjs-theme-streamwaves .vjs-slider {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.vjs-theme-streamwaves .vjs-load-progress {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.vjs-theme-streamwaves .vjs-load-progress div {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.vjs-theme-streamwaves .vjs-volume-level {
+  background-color: var(--vjs-theme-streamwaves--primary);
+}
+
+.vjs-theme-streamwaves .vjs-big-play-button {
+  background-color: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 50%;
+  width: 3em;
+  height: 3em;
+  line-height: 3em;
+  margin-left: -1.5em;
+  margin-top: -1.5em;
+}
+
+.vjs-theme-streamwaves .vjs-big-play-button:focus,
+.vjs-theme-streamwaves:hover .vjs-big-play-button {
+  background-color: var(--vjs-theme-streamwaves--primary);
+}
+
+.vjs-theme-streamwaves .vjs-menu-button-popup .vjs-menu {
+  width: 20em;
+}
+
+.vjs-theme-streamwaves .vjs-menu-button-popup .vjs-menu .vjs-menu-content {
+  background-color: rgba(0, 0, 0, 0.9);
+  border-radius: 0.5em;
+  padding: 0.5em;
+}
+
+.vjs-theme-streamwaves .vjs-menu li {
+  padding: 0.5em;
+  font-size: 0.9em;
+  text-transform: none;
+}
+
+.vjs-theme-streamwaves .vjs-menu li.vjs-selected,
+.vjs-theme-streamwaves .vjs-menu li.vjs-menu-item:focus,
+.vjs-theme-streamwaves .vjs-menu li.vjs-menu-item:hover {
+  background-color: var(--vjs-theme-streamwaves--primary);
+  color: var(--vjs-theme-streamwaves--secondary);
+}
+
+.vjs-theme-streamwaves .vjs-loading-spinner {
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--vjs-theme-streamwaves--primary);
+}
+
+.vjs-theme-streamwaves.vjs-waiting .vjs-loading-spinner {
+  display: block;
+}
+
+/* Responsividade */
+.vjs-theme-streamwaves.vjs-fluid {
+  padding-top: 56.25%; /* 16:9 */
+  max-height: calc(100vh - 6rem);
+} 
