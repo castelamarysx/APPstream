@@ -19,7 +19,8 @@ const corsOptions = {
     ? [/\.onrender\.com$/, process.env.CLIENT_URL].filter(Boolean)
     : 'http://localhost:5173',
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
+  exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges'],
   credentials: true,
   maxAge: 86400 // 24 horas
 };
@@ -39,26 +40,23 @@ app.use((req, res, next) => {
 // Função para resolver DNS
 async function resolveDNS(hostname, customDNS) {
   if (!customDNS) {
-    return hostname; // Usa DNS padrão do sistema
+    return hostname;
   }
 
   try {
-    // Configura o resolver com o DNS customizado
     const resolver = new dns.Resolver();
     resolver.setServers([customDNS]);
-
-    // Resolve o hostname
     const resolve4 = promisify(resolver.resolve4.bind(resolver));
     const addresses = await resolve4(hostname);
     
     if (addresses && addresses.length > 0) {
-      return addresses[0]; // Retorna o primeiro IP encontrado
+      return addresses[0];
     }
   } catch (error) {
     console.error('DNS resolution error:', error);
   }
   
-  return hostname; // Fallback para o hostname original
+  return hostname;
 }
 
 // Middleware para validação de parâmetros
@@ -135,6 +133,50 @@ app.get('/api/iptv', validateParams, async (req, res) => {
         error: `Internal server error: ${error.message}`
       });
     }
+  }
+});
+
+// Rota para streaming de vídeo
+app.get('/api/stream', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) {
+      return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    const range = req.headers.range;
+    const response = await axios({
+      method: 'GET',
+      url: url,
+      responseType: 'stream',
+      headers: {
+        'Range': range,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      maxRedirects: 5,
+      timeout: 30000,
+      validateStatus: function (status) {
+        return status >= 200 && status < 400;
+      }
+    });
+
+    // Encaminha os headers importantes
+    res.setHeader('Content-Type', response.headers['content-type']);
+    res.setHeader('Content-Length', response.headers['content-length']);
+    res.setHeader('Accept-Ranges', 'bytes');
+    
+    if (response.headers['content-range']) {
+      res.setHeader('Content-Range', response.headers['content-range']);
+    }
+
+    // Pipe o stream
+    response.data.pipe(res);
+  } catch (error) {
+    console.error('Streaming error:', error.message);
+    res.status(500).json({
+      error: 'Streaming error',
+      details: error.message
+    });
   }
 });
 

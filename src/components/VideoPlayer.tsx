@@ -36,6 +36,14 @@ export function VideoPlayer({
       return 'application/x-mpegURL';
     };
 
+    // Prepara a URL do stream através do nosso proxy
+    const getProxyUrl = (originalUrl: string) => {
+      const apiUrl = process.env.NODE_ENV === 'production'
+        ? window.location.origin
+        : 'http://localhost:3001';
+      return `${apiUrl}/api/stream?url=${encodeURIComponent(originalUrl)}`;
+    };
+
     // Inicializa o player
     const player = videojs(videoRef.current, {
       controls,
@@ -45,15 +53,15 @@ export function VideoPlayer({
       responsive: true,
       fill: true,
       poster,
-      liveui: !src.includes('.mp4'), // Desativa liveui para vídeos não-live
+      liveui: !src.includes('.mp4'),
       html5: {
         vhs: {
-          overrideNative: !src.includes('.mp4'), // Mantém nativo para MP4
+          overrideNative: !src.includes('.mp4'),
           withCredentials: false,
           handleManifestRedirects: true,
           handlePartialData: true,
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'Range': 'bytes=0-'
           }
         },
         nativeAudioTracks: src.includes('.mp4'),
@@ -61,7 +69,7 @@ export function VideoPlayer({
         nativeTextTracks: src.includes('.mp4')
       },
       sources: [{
-        src,
+        src: getProxyUrl(src),
         type: getSourceType(src)
       }],
       controlBar: {
@@ -97,37 +105,18 @@ export function VideoPlayer({
         readyState: player.readyState()
       });
 
-      // Para MP4, tenta recarregar diretamente
-      if (src.includes('.mp4')) {
-        setTimeout(() => {
-          player.src({
-            src,
-            type: 'video/mp4'
-          });
-          player.load();
-          player.play().catch(playError => {
-            console.error('Erro ao tentar reproduzir MP4:', playError);
-          });
-        }, 2000);
-      } else {
-        // Para outros formatos, tenta alternar entre HLS e TS
-        const currentSource = player.currentSource() as { type?: string };
-        const currentType = currentSource?.type || getSourceType(src);
-        const alternativeType = currentType === 'application/x-mpegURL' ? 'video/MP2T' : 'application/x-mpegURL';
-        
-        console.log(`Tentando recarregar com tipo alternativo: ${alternativeType}`);
-        
-        setTimeout(() => {
-          player.src({
-            src,
-            type: alternativeType
-          });
-          player.load();
-          player.play().catch(playError => {
-            console.error('Erro ao tentar reproduzir após recarregar:', playError);
-          });
-        }, 2000);
-      }
+      // Tenta recarregar com a URL do proxy
+      setTimeout(() => {
+        const proxyUrl = getProxyUrl(src);
+        player.src({
+          src: proxyUrl,
+          type: getSourceType(src)
+        });
+        player.load();
+        player.play().catch(playError => {
+          console.error('Erro ao tentar reproduzir através do proxy:', playError);
+        });
+      }, 2000);
     });
 
     // Log de eventos importantes
