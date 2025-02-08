@@ -4,6 +4,11 @@ import axios from 'axios';
 import NodeCache from 'node-cache';
 import dns from 'dns';
 import { promisify } from 'util';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const cache = new NodeCache({ stdTTL: 300 }); // Cache por 5 minutos
@@ -21,6 +26,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// Servir arquivos estáticos do build do Vite
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Middleware para logging
 app.use((req, res, next) => {
@@ -133,6 +141,11 @@ app.get('/api/iptv', validateParams, async (req, res) => {
 // Rota de healthcheck
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Rota para todas as outras requisições - serve o index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3001;
