@@ -145,13 +145,19 @@ app.get('/api/stream', async (req, res) => {
     }
 
     const range = req.headers.range;
+    const isHLS = url.includes('.m3u8');
+
     const response = await axios({
       method: 'GET',
       url: url,
-      responseType: 'stream',
+      responseType: isHLS ? 'text' : 'stream',
       headers: {
-        'Range': range,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        ...(range && { 'Range': range }),
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Origin': process.env.NODE_ENV === 'production' ? 'https://appstream.onrender.com' : 'http://localhost:5173',
+        'Referer': process.env.NODE_ENV === 'production' ? 'https://appstream.onrender.com/' : 'http://localhost:5173/'
       },
       maxRedirects: 5,
       timeout: 30000,
@@ -160,9 +166,31 @@ app.get('/api/stream', async (req, res) => {
       }
     });
 
-    // Encaminha os headers importantes
+    // Para streams HLS, precisamos processar o conteúdo
+    if (isHLS) {
+      let playlist = response.data;
+      
+      // Se for uma playlist master, mantém como está
+      if (playlist.includes('#EXT-X-STREAM-INF')) {
+        res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+        return res.send(playlist);
+      }
+
+      // Para playlists de mídia, ajusta os caminhos dos segmentos
+      const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+      playlist = playlist.replace(/^(?!#)(.+\.ts)$/gm, (match) => {
+        return baseUrl + match;
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+      return res.send(playlist);
+    }
+
+    // Para outros tipos de stream
     res.setHeader('Content-Type', response.headers['content-type']);
-    res.setHeader('Content-Length', response.headers['content-length']);
+    if (response.headers['content-length']) {
+      res.setHeader('Content-Length', response.headers['content-length']);
+    }
     res.setHeader('Accept-Ranges', 'bytes');
     
     if (response.headers['content-range']) {

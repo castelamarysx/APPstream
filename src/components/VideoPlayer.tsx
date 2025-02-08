@@ -44,6 +44,8 @@ export function VideoPlayer({
       return `${apiUrl}/api/stream?url=${encodeURIComponent(originalUrl)}`;
     };
 
+    const isHLS = src.includes('.m3u8');
+
     // Inicializa o player
     const player = videojs(videoRef.current, {
       controls,
@@ -53,20 +55,24 @@ export function VideoPlayer({
       responsive: true,
       fill: true,
       poster,
-      liveui: !src.includes('.mp4'),
+      liveui: isHLS,
       html5: {
         vhs: {
-          overrideNative: !src.includes('.mp4'),
+          overrideNative: true,
           withCredentials: false,
           handleManifestRedirects: true,
           handlePartialData: true,
+          useBandwidthFromLocalStorage: true,
+          useDevicePixelRatio: true,
+          limitRenditionByPlayerDimensions: false,
           headers: {
-            'Range': 'bytes=0-'
+            'Accept': '*/*',
+            'Origin': window.location.origin
           }
         },
-        nativeAudioTracks: src.includes('.mp4'),
-        nativeVideoTracks: src.includes('.mp4'),
-        nativeTextTracks: src.includes('.mp4')
+        nativeAudioTracks: false,
+        nativeVideoTracks: false,
+        nativeTextTracks: false
       },
       sources: [{
         src: getProxyUrl(src),
